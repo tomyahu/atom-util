@@ -8,6 +8,7 @@ tools:
 
 build:
 	GOOS=linux GOARCH=amd64 go build -v -o $(BIN)/find-line main.go
+	cp ./bin/find-line ~/.local/bin/
 
 lint:
 	$(BIN)/golangci-lint run
