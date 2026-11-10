@@ -1,0 +1,10 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Add Command",
+			"type": "shell",
+			"command": "copier copy --trust --defaults --ask command_name --ask command_description .atoms/add_sub_command ."
+		}
+	]
+}

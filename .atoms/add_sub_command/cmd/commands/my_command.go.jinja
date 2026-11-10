@@ -1,0 +1,19 @@
+package commands
+
+import (
+	"context"
+
+	"github.com/urfave/cli/v3"
+)
+
+var {{ command_name_pascal_case }} = &cli.Command{
+	Name:               "{{ command_name }}",
+	Usage:              "{{ command_description }}",
+	CustomHelpTemplate: SubCommandHelpTemplate,
+	Arguments:          []cli.Argument{},
+	Flags:              []cli.Flag{},
+	Action: func(ctx context.Context, cmd *cli.Command) error {
+		// TODO: Implement Action
+		return nil
+	},
+}

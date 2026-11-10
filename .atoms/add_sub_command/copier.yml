@@ -1,0 +1,19 @@
+command_name:
+  type: str
+  help: >
+    The name of the command in snake or kebab case
+
+command_description:
+  type: str
+  help: >
+    The usage description of the command
+
+command_name_pascal_case:
+  type: str
+  help: >
+    The command name in pascal case
+  default: "{{ command_name.replace('_', ' ').title().replace(' ', '') }}"
+
+_tasks:
+  - ./tmp_folder/register_command.sh
+  - rm -rf tmp_folder
