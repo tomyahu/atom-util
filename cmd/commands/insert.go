@@ -29,10 +29,10 @@ var InsertCommand = &cli.Command{
 	},
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
-			Name:    "insert_after_line",
-			Usage:   "When included, the tool inserts the contents of the source file after the line specified instead of before",
+			Name:    "insert_before_line",
+			Usage:   "When included, the tool inserts the contents of the source file before the line specified instead of after",
 			Value:   false,
-			Aliases: []string{"i"},
+			Aliases: []string{"b"},
 		},
 		&cli.BoolFlag{
 			Name:    "source_as_string",
@@ -79,17 +79,17 @@ var InsertCommand = &cli.Command{
 		result := ""
 		for i, lineContent := range splittedTargetOriginalData {
 			index := i + 1
-			if cmd.Bool("insert_after_line") {
-				result += lineContent + "\n"
+			if cmd.Bool("insert_before_line") {
 				if index == line {
 					result += dataToInsert + "\n"
 				}
+				result += lineContent + "\n"
 
 			} else {
+				result += lineContent + "\n"
 				if index == line {
 					result += dataToInsert + "\n"
 				}
-				result += lineContent + "\n"
 			}
 		}
 
