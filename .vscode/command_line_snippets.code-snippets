@@ -7,7 +7,7 @@
         "description": ""
     },
     "b1fe0e3e-2d81-422e-bdb1-48d7b1dd4516": {
-        "prefix": "s_argument_get",
+        "prefix": "sr_argument_get",
         "body": [
             "cmd.${1|StringArg,IntArg,BoolArg,FloatArg|}(\"${2:flag_name}\")"
         ],
