@@ -8,10 +8,10 @@ import (
 func App() *cli.Command {
 	commands := &cli.Command{
 		Commands: []*cli.Command{
-			// ! Register commands
 			commands.FindCommand,
 			commands.InsertCommand,
 			commands.DiffToAtomCommand,
+			// ! Register commands
 		},
 	}
 
