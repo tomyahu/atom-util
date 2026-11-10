@@ -34,7 +34,7 @@ var DiffToAtomCommand = &cli.Command{
 			return fmt.Errorf("could not read diff file '%s': %w", diff_file, err)
 		}
 
-		regex := regexp.MustCompile(`\nindex [\d\w]+\.\.[\d\w]+(?: \d+)?\n--- (.*)\n\+\+\+ b/(.*)\n@@ -(\d+),(\d+) \+(\d+),(\d+) @@\n((:?.*\n)+?)diff`)
+		regex := regexp.MustCompile(`\nindex [\d\w]+\.\.[\d\w]+(?: \d+)?\n--- (.*)\n\+\+\+ b/(.*)\n@@ -(\d+),(\d+) \+(\d+),(\d+) @@[\n ]((:?.*\n)+?)diff`)
 
 		atom_path := fmt.Sprintf("./.atoms/%s", cmd.StringArg("atom_name"))
 		err = os.MkdirAll(atom_path, 0755)
@@ -42,7 +42,7 @@ var DiffToAtomCommand = &cli.Command{
 			return fmt.Errorf("could not create atom directory '%s': %w", atom_path, err)
 		}
 
-		matches := regex.FindAllStringSubmatch(string(data), 6)
+		matches := regex.FindAllStringSubmatch(string(data)+"diff", 6)
 		for match_index, match := range matches {
 			groups_expected := 8
 			if len(match) < groups_expected {
