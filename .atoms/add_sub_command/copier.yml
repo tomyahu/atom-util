@@ -1,7 +1,7 @@
 command_name:
   type: str
   help: >
-    The name of the command in snake or kebab case
+    The name of the command in snake case
 
 command_description:
   type: str

@@ -6,7 +6,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var {{ command_name_pascal_case }} = &cli.Command{
+var {{ command_name_pascal_case }}Command = &cli.Command{
 	Name:               "{{ command_name }}",
 	Usage:              "{{ command_description }}",
 	CustomHelpTemplate: SubCommandHelpTemplate,
