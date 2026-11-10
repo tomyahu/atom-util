@@ -76,24 +76,24 @@ var InsertCommand = &cli.Command{
 			line = max(len(splittedTargetOriginalData) + line)
 		}
 
-		result := ""
+		result := []string{}
 		for i, lineContent := range splittedTargetOriginalData {
 			index := i + 1
 			if cmd.Bool("insert_before_line") {
 				if index == line {
-					result += dataToInsert + "\n"
+					result = append(result, dataToInsert)
 				}
-				result += lineContent + "\n"
+				result = append(result, lineContent)
 
 			} else {
-				result += lineContent + "\n"
+				result = append(result, lineContent)
 				if index == line {
-					result += dataToInsert + "\n"
+					result = append(result, dataToInsert)
 				}
 			}
 		}
 
-		err = os.WriteFile(targetFile, []byte(result), 0644)
+		err = os.WriteFile(targetFile, []byte(strings.Join(result, "\n")), 0644)
 		if err != nil {
 			return fmt.Errorf("failed to override target file '%s': %w", targetFile, err)
 		}
