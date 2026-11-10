@@ -10,6 +10,7 @@ func App() *cli.Command {
 		Commands: []*cli.Command{
 			commands.FindCommand,
 			commands.InsertCommand,
+			commands.DiffToAtomCommand,
 		},
 	}
 
