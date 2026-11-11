@@ -14,24 +14,24 @@
         "description": ""
     },
     "3ac2cc29-43d0-46a0-b03b-4f7180c4f047": {
-        "prefix": "s_argument_define",
+        "prefix": "sr_argument_define",
         "body": [
             "&cli.${1|StringArg,IntArg,BoolArg,FloatArg|}{",
             "\tName:\t  \"${2:argument_name}\",",
             "\tUsageText: \"${3:argument_usage}\",",
-            "}"
+            "},"
         ],
         "description": ""
     },
     "16f92cc6-d2a8-4e3b-a17c-495c2554d137": {
-        "prefix": "s_flag_define",
+        "prefix": "sr_flag_define",
         "body": [
             "&cli.${1|StringFlag,IntFlag,BoolFlag,FloatFlag|}{",
             "\tName:\t\"${2:flag_name}\",",
             "\tUsage:   \"${3:flag_usage}\",",
             "\tValue:   ${4:default_value},",
             "\tAliases: []string{\"${5:aliases}\"},",
-            "}"
+            "},"
         ],
         "description": ""
     }

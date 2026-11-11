@@ -37,7 +37,14 @@ var DiffToAtomCommand = &cli.Command{
 			UsageText: "The name of the atom to create",
 		},
 	},
-	Flags: []cli.Flag{},
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:    "block_pattern_anything",
+			Usage:   "When creating the script.sh file, do regex matching on anything, as opposed to only when the next line of the block is a comment",
+			Value:   false,
+			Aliases: []string{"m"},
+		},
+	},
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		diff_file := cmd.StringArg("diff_file")
 
@@ -93,7 +100,7 @@ var DiffToAtomCommand = &cli.Command{
 				added_blocks_regex := regexp.MustCompile(`(?:[\n^]\+.*)+(?:\n.*)`)
 				for sm_index, sub_match := range added_blocks_regex.FindAllString(body, -1) {
 					file_name := fmt.Sprintf("%s/tmp_folder/%d_%d_%s", atom_path, match_index, sm_index, filepath.Base(target_file))
-					err = saveModifiedBlockInAtom(file_name, target_file, sub_match, tmp_folder_script_file)
+					err = saveModifiedBlockInAtom(file_name, target_file, sub_match, tmp_folder_script_file, !cmd.Bool("block_pattern_anything"))
 					if err != nil {
 						return err
 					}
@@ -133,7 +140,7 @@ func saveNewFileInAtom(body string, file_name string) error {
 }
 
 // Saves a modified block in an atom and creates a template
-func saveModifiedBlockInAtom(file_name string, target_file string, sub_match string, tmp_folder_script_file *os.File) error {
+func saveModifiedBlockInAtom(file_name string, target_file string, sub_match string, tmp_folder_script_file *os.File, match_only_comments bool) error {
 	err := os.MkdirAll(filepath.Dir(file_name), 0755)
 	if err != nil {
 		return fmt.Errorf("could not create output file directory for '%s': %w", file_name, err)
@@ -142,7 +149,7 @@ func saveModifiedBlockInAtom(file_name string, target_file string, sub_match str
 	find_pattern_regex := regexp.MustCompile(`\n.*$`)
 	pattern := find_pattern_regex.FindString(sub_match)
 	pattern = strings.Trim(pattern, "\n \t")
-	if pattern == "" {
+	if pattern == "" || (match_only_comments && !strings.HasPrefix(pattern, "//") && !strings.HasPrefix(pattern, "#")) {
 		pattern = "1"
 	}
 
