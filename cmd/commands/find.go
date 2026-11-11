@@ -11,8 +11,8 @@ import (
 )
 
 var FindCommand = &cli.Command{
-	Name:                          "find",
-	Usage:                         "Takes a regex to find the line number of the first match",
+	Name:               "find",
+	Usage:              "Takes a regex to find the line number of the first match",
 	CustomHelpTemplate: SubCommandHelpTemplate,
 	Arguments: []cli.Argument{
 		&cli.StringArg{

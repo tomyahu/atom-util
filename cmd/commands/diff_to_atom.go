@@ -70,7 +70,7 @@ var DiffToAtomCommand = &cli.Command{
 		if err != nil {
 			return fmt.Errorf("could not create tmp_folder script file: %w", err)
 		}
-		defer tmp_folder_script_file.Close()
+		defer tmp_folder_script_file.Close() //nolint:errcheck
 
 		err = createCopierYml(atom_path)
 		if err != nil {
@@ -129,7 +129,7 @@ func saveNewFileInAtom(body string, file_name string) error {
 	if err != nil {
 		return fmt.Errorf("could not create output file '%s': %w", file_name, err)
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	_, err = file.WriteString(body)
 	if err != nil {
@@ -161,7 +161,7 @@ func saveModifiedBlockInAtom(file_name string, target_file string, sub_match str
 	if err != nil {
 		return fmt.Errorf("could not create output block file '%s': %w", file_name, err)
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	_, err = file.WriteString(sub_match)
 	if err != nil {
