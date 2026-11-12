@@ -1,14 +1,16 @@
 
 BIN := ./bin
 
-.PHONY: build test tools lint lint-fix run
+.PHONY: install build test tools lint lint-fix run
+
+install:
+	go install
 
 tools:
 	curl -sSfL https://golangci-lint.run/install.sh | sh -s v2.12.2
 
 build:
-	GOOS=linux GOARCH=amd64 go build -v -o $(BIN)/atom-util main.go
-	cp ./bin/atom-util ~/.local/bin/
+	go build -v -o $(BIN)/atom-util main.go
 
 lint:
 	$(BIN)/golangci-lint run
@@ -22,4 +24,4 @@ test:
 	go test
 
 run:
-	GOOS=linux GOARCH=amd64 go run .
+	go run .
