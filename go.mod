@@ -1,4 +1,4 @@
-module example.com/find-line
+module example.com/atom-util
 
 go 1.25.0
 

@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"example.com/find-line/cmd/commands"
+	"example.com/atom-util/cmd/commands"
 	"github.com/urfave/cli/v3"
 )
 

@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"example.com/find-line/cmd"
+	"example.com/atom-util/cmd"
 )
 
 func main() {

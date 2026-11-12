@@ -1,2 +1,2 @@
-LINE=$(find-line find "// ! Register commands" cmd/app.go)
-find-line insert -b "tmp_folder/1_0_app.go" "cmd/app.go" $LINE
+LINE=$(atom-util find "// ! Register commands" cmd/app.go)
+atom-util insert -b "tmp_folder/1_0_app.go" "cmd/app.go" $LINE

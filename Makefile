@@ -7,8 +7,8 @@ tools:
 	curl -sSfL https://golangci-lint.run/install.sh | sh -s v2.12.2
 
 build:
-	GOOS=linux GOARCH=amd64 go build -v -o $(BIN)/find-line main.go
-	cp ./bin/find-line ~/.local/bin/
+	GOOS=linux GOARCH=amd64 go build -v -o $(BIN)/atom-util main.go
+	cp ./bin/atom-util ~/.local/bin/
 
 lint:
 	$(BIN)/golangci-lint run

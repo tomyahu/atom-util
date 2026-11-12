@@ -13,8 +13,8 @@ import (
 )
 
 var insertBlockTemplateText = `
-LINE=$(find-line find "{{.SearchPattern}}" cmd/app.go)
-find-line insert -b "{{.BlockFile}}" "{{.TargetFile}}" $LINE
+LINE=$(atom-util find "{{.SearchPattern}}" cmd/app.go)
+atom-util insert -b "{{.BlockFile}}" "{{.TargetFile}}" $LINE
 `
 
 type insertBlockData struct {
