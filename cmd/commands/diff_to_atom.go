@@ -44,6 +44,12 @@ var DiffToAtomCommand = &cli.Command{
 			Value:   false,
 			Aliases: []string{"m"},
 		},
+		&cli.StringFlag{
+			Name:    "output_folder",
+			Usage:   "The output folder where to save the atom",
+			Value:   ".atoms",
+			Aliases: []string{"o"},
+		},
 	},
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		diff_file := cmd.StringArg("diff_file")
@@ -55,7 +61,7 @@ var DiffToAtomCommand = &cli.Command{
 
 		regex := regexp.MustCompile(`\nindex [\d\w]+\.\.[\d\w]+(?: \d+)?\n--- (.*)\n\+\+\+ b/(.*)\n@@ -(\d+),(\d+) \+(\d+),(\d+) @@[\n ]((:?.*\n)+?)diff`)
 
-		atom_path := fmt.Sprintf("./.atoms/%s", cmd.StringArg("atom_name"))
+		atom_path := fmt.Sprintf("%s/%s", cmd.String("output_folder"), cmd.StringArg("atom_name"))
 		err = os.MkdirAll(atom_path, 0755)
 		if err != nil {
 			return fmt.Errorf("could not create atom directory '%s': %w", atom_path, err)
