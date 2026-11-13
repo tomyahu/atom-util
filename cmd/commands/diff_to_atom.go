@@ -129,8 +129,8 @@ var DiffToAtomCommand = &cli.Command{
 				for b_index, block := range diffFile.Blocks {
 					file_name := fmt.Sprintf("%s/tmp_folder/%d_%d_%s", atom_path, file_index, b_index, filepath.Base(diffFile.TargetFile))
 					err = saveModifiedBlockInAtom(insertBlockScriptData{
-						BlockStartLine: block.NewStartLine,
-						BlockEndLine:   block.NewEndLine,
+						BlockStartLine: block.NewStartLine + b_index,
+						BlockEndLine:   block.NewEndLine + b_index,
 						BlockContent:   block.Body,
 						Filename:       file_name,
 						TargetFileName: diffFile.TargetFile,
@@ -181,7 +181,7 @@ func parseGitDiff(gitDiff string) ([]gitDiffFileData, error) {
 
 // Parses individual change blocks for a git diff file
 func parseGitBlocks(gitDiffFileBody string) ([]gitDiffBlock, error) {
-	headerRegex := regexp.MustCompile(`@@ -(\d+),(\d+) \+(\d+),(\d+) .*`)
+	headerRegex := regexp.MustCompile(`@@ -(\d+),(\d+) \+(\d+)(?:,(\d+))? .*`)
 	plus_regex := regexp.MustCompile(`^\+`)
 	minus_regex := regexp.MustCompile(`^\-`)
 
@@ -208,7 +208,7 @@ func parseGitBlocks(gitDiffFileBody string) ([]gitDiffBlock, error) {
 
 		blockExtends, err := strconv.Atoi(match[4])
 		if err != nil {
-			return []gitDiffBlock{}, fmt.Errorf("could not extract new block line amount: %w", err)
+			blockExtends = 1
 		}
 
 		i++
@@ -232,6 +232,9 @@ func parseGitBlocks(gitDiffFileBody string) ([]gitDiffBlock, error) {
 				j++
 			}
 			i++
+		}
+		if endBlockLine == -1 {
+			endBlockLine = newStartBlock + j
 		}
 
 		result = append(result, gitDiffBlock{
@@ -291,10 +294,10 @@ func saveModifiedBlockInAtom(data insertBlockScriptData, tmp_folder_script_file 
 	}
 
 	pattern = strings.Trim(pattern, "\n \t")
-	if pattern == "" || (match_only_comments && !strings.HasPrefix(pattern, "//") && !strings.HasPrefix(pattern, "#")) {
+	if pattern == "" || (match_only_comments && !strings.HasPrefix(pattern, getCommentByExtension(filepath.Ext(data.TargetFileName)))) {
 		pattern = "_____"
 		if add_uuid_comments {
-			pattern = "// ! " + uuid.NewString()
+			pattern = getCommentByExtension(filepath.Ext(data.TargetFileName)) + " ! " + uuid.NewString()
 			insertTextAtFileLine(pattern, data.TargetFileName, data.BlockEndLine, true)
 		}
 	}

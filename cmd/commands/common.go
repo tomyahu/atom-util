@@ -73,3 +73,15 @@ func getLineContent(data string, line int) (string, error) {
 
 	return splittedData[line-1], nil
 }
+
+func getCommentByExtension(extension string) string {
+	if extension == "py" {
+		return "#"
+	}
+
+	if extension == "lua" {
+		return "--"
+	}
+
+	return "//"
+}
