@@ -1,0 +1,23 @@
+bceab27 (HEAD -> master, origin/master) fix: insert block template mistake
+diff --git a/cmd/commands/diff_to_atom.go b/cmd/commands/diff_to_atom.go
+index f84724d..08e4a5b 100644
+--- a/cmd/commands/diff_to_atom.go
++++ b/cmd/commands/diff_to_atom.go
+@@ -13,7 +13,7 @@ import (
+ )
+ 
+ var insertBlockTemplateText = `
+-LINE=$(atom-util find "{{.SearchPattern}}" cmd/app.go)
++LINE=$(atom-util find "{{.SearchPattern}}" {{.TargetFile}})
+ atom-util insert -b "{{.BlockFile}}" "{{.TargetFile}}" $LINE
+ `
+ 
+@@ -176,7 +176,7 @@ func saveModifiedBlockInAtom(file_name string, target_file string, sub_match str
+ 
+ 	err = getInsertBlockTemplate().Execute(tmp_folder_script_file, insertBlockData{
+ 		SearchPattern: pattern,
+-		BlockFile:     file_name,
++		BlockFile:     "tmp_folder/" + filepath.Base(file_name),
+ 		TargetFile:    target_file,
+ 	})
+ 	if err != nil {

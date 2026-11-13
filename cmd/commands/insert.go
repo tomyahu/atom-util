@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/urfave/cli/v3"
 )
@@ -66,36 +65,9 @@ var InsertCommand = &cli.Command{
 			dataToInsert = string(data)
 		}
 
-		targetOriginalData, err := os.ReadFile(targetFile)
+		err := insertTextAtFileLine(dataToInsert, targetFile, line, cmd.Bool("insert_before_line"))
 		if err != nil {
-			return fmt.Errorf("could not open target file '%s': %w", targetFile, err)
-		}
-		splittedTargetOriginalData := strings.Split(string(targetOriginalData), "\n")
-
-		if line < 1 {
-			line = max(len(splittedTargetOriginalData) + line)
-		}
-
-		result := []string{}
-		for i, lineContent := range splittedTargetOriginalData {
-			index := i + 1
-			if cmd.Bool("insert_before_line") {
-				if index == line {
-					result = append(result, dataToInsert)
-				}
-				result = append(result, lineContent)
-
-			} else {
-				result = append(result, lineContent)
-				if index == line {
-					result = append(result, dataToInsert)
-				}
-			}
-		}
-
-		err = os.WriteFile(targetFile, []byte(strings.Join(result, "\n")), 0644)
-		if err != nil {
-			return fmt.Errorf("failed to override target file '%s': %w", targetFile, err)
+			return err
 		}
 
 		return nil
