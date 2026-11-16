@@ -21,7 +21,7 @@ lint-fix:
 	$(BIN)/golangci-lint fmt
 
 test:
-	go test
+	go test ./...
 
 run:
 	go run .

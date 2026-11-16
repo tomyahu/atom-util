@@ -1,4 +1,4 @@
-package commands
+package diff_to_atom
 
 import (
 	"testing"
@@ -62,13 +62,19 @@ var gitDiffBlocksExample3 = `@@ -11,9 +11,11 @@ func App() *cli.Command {
  }`
 
 func TestParse(t *testing.T) {
-	values, err := parseGitDiff(gitDiffExample)
+	diff, err := ParseDiffFile(gitDiffExample)
 	assert.NoError(t, err)
-	assert.Len(t, values, 2)
+	assert.Len(t, diff.ModifiedFiles, 2)
+}
+
+func TestRawFileDiffBlocks(t *testing.T) {
+	result, err := getRawFileDiffBlocks(gitDiffBlocksExample2)
+	assert.NoError(t, err)
+	assert.Len(t, result, 3)
 }
 
 func TestBlockParse(t *testing.T) {
-	values, err := parseGitBlocks(gitDiffBlocksExample)
+	values, err := parseFileDiffBlocks(gitDiffBlocksExample)
 	assert.NoError(t, err)
 	assert.Len(t, values, 3)
 
@@ -76,21 +82,13 @@ func TestBlockParse(t *testing.T) {
 	value2 := values[1]
 	value3 := values[2]
 
-	assert.Equal(t, 8, value1.NewStartLine)
-	assert.Equal(t, 9, value1.NewEndLine)
 	assert.Equal(t, 7, value1.OldStartLine)
-
-	assert.Equal(t, 18, value2.NewStartLine)
-	assert.Equal(t, 19, value2.NewEndLine)
 	assert.Equal(t, 16, value2.OldStartLine)
-
-	assert.Equal(t, 21, value3.NewStartLine)
-	assert.Equal(t, 23, value3.NewEndLine)
 	assert.Equal(t, 18, value3.OldStartLine)
 }
 
 func TestBlockParseSubBlocks(t *testing.T) {
-	values, err := parseGitBlocks(gitDiffBlocksExample2)
+	values, err := parseFileDiffBlocks(gitDiffBlocksExample2)
 	assert.NoError(t, err)
 	assert.Len(t, values, 5)
 
@@ -100,29 +98,15 @@ func TestBlockParseSubBlocks(t *testing.T) {
 	value4 := values[3]
 	value5 := values[4]
 
-	assert.Equal(t, 8, value1.NewStartLine)
-	assert.Equal(t, 9, value1.NewEndLine)
 	assert.Equal(t, 7, value1.OldStartLine)
-
-	assert.Equal(t, 18, value2.NewStartLine)
-	assert.Equal(t, 19, value2.NewEndLine)
 	assert.Equal(t, 16, value2.OldStartLine)
-
-	assert.Equal(t, 21, value3.NewStartLine)
-	assert.Equal(t, 22, value3.NewEndLine)
 	assert.Equal(t, 18, value3.OldStartLine)
-
-	assert.Equal(t, 23, value4.NewStartLine)
-	assert.Equal(t, 24, value4.NewEndLine)
 	assert.Equal(t, 19, value4.OldStartLine)
-
-	assert.Equal(t, 25, value5.NewStartLine)
-	assert.Equal(t, 26, value5.NewEndLine)
 	assert.Equal(t, 20, value5.OldStartLine)
 }
 
 func TestBlockParseBigBlock(t *testing.T) {
-	values, err := parseGitBlocks(gitDiffBlocksExample3)
+	values, err := parseFileDiffBlocks(gitDiffBlocksExample3)
 	assert.NoError(t, err)
 	assert.Len(t, values, 2)
 

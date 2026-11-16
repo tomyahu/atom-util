@@ -6,10 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"text/template"
 
+	"example.com/atom-util/cmd/commands/diff_to_atom"
 	"github.com/google/uuid"
 
 	"github.com/urfave/cli/v3"
@@ -24,19 +24,6 @@ type insertBlockData struct {
 	SearchPattern string
 	BlockFile     string
 	TargetFile    string
-}
-
-type gitDiffBlock struct {
-	OldStartLine int
-	NewStartLine int
-	NewEndLine   int
-	Body         string
-}
-
-type gitDiffFileData struct {
-	TargetFile string
-	Blocks     []gitDiffBlock
-	IsNewFile  bool
 }
 
 type insertBlockScriptData struct {
@@ -109,13 +96,12 @@ var DiffToAtomCommand = &cli.Command{
 		if err != nil {
 			return fmt.Errorf("could not create copier yaml file: %w", err)
 		}
-		parsedGitDiff, err := parseGitDiff(string(data))
+		parsedGitDiff, err := diff_to_atom.ParseDiffFile(string(data))
 		if err != nil {
 			return fmt.Errorf("failed to parse git diff: %w", err)
 		}
 
-		for file_index, diffFile := range parsedGitDiff {
-
+		for file_index, diffFile := range parsedGitDiff.ModifiedFiles {
 			if diffFile.IsNewFile {
 				file_name := atom_path + "/" + diffFile.TargetFile
 				err = saveNewFileInAtom(diffFile.Blocks[0].Body, file_name)
@@ -124,8 +110,8 @@ var DiffToAtomCommand = &cli.Command{
 				}
 
 				continue
-			} else {
 
+			} else {
 				lineOffset := 0
 				for b_index, block := range diffFile.Blocks {
 					file_name := fmt.Sprintf("%s/tmp_folder/%d_%d_%s", atom_path, file_index, b_index, filepath.Base(diffFile.TargetFile))
@@ -150,133 +136,6 @@ var DiffToAtomCommand = &cli.Command{
 		}
 		return nil
 	},
-}
-
-func parseGitDiff(gitDiff string) ([]gitDiffFileData, error) {
-	regex := regexp.MustCompile(`\nindex [\d\w]+\.\.[\d\w]+(?: \d+)?\n--- (.*)\n\+\+\+ b/(.*)\n((:?.*\n)+?)diff`)
-	var result = []gitDiffFileData{}
-	gitDiff = strings.ReplaceAll(gitDiff, "\\ No newline at end of file\n", "")
-	matches := regex.FindAllStringSubmatch(gitDiff+"diff", -1)
-	for _, match := range matches {
-		groups_expected := 4
-		if len(match) < groups_expected {
-			return []gitDiffFileData{}, fmt.Errorf("unexpected number of groups captured when evaluating the regex, expected %d groups and got %d: %s", groups_expected, len(match), match)
-		}
-
-		body := match[3]
-		target_file := match[2]
-		is_new_file := match[1] == "/dev/null"
-		blocks, err := parseGitBlocks(body)
-		if err != nil {
-			return []gitDiffFileData{}, fmt.Errorf("could not parse git diff blocks for file '%s': %w", target_file, err)
-		}
-
-		result = append(result, gitDiffFileData{
-			TargetFile: target_file,
-			Blocks:     blocks,
-			IsNewFile:  is_new_file,
-		})
-
-	}
-
-	return result, nil
-}
-
-// Parses individual change blocks for a git diff file
-func parseGitBlocks(gitDiffFileBody string) ([]gitDiffBlock, error) {
-	headerRegex := regexp.MustCompile(`@@ -(\d+),(\d+) \+(\d+)(?:,(\d+))? .*`)
-	plus_regex := regexp.MustCompile(`^\+`)
-	minus_regex := regexp.MustCompile(`^\-`)
-
-	splittedBody := strings.Split(gitDiffFileBody, "\n")
-
-	var result = []gitDiffBlock{}
-	i := 0
-	for i < len(splittedBody)-2 {
-		lineContent := splittedBody[i]
-		if !headerRegex.MatchString(lineContent) {
-			return []gitDiffBlock{}, fmt.Errorf("parsed header line is not valid: %s", lineContent)
-		}
-
-		match := headerRegex.FindStringSubmatch(lineContent)
-
-		if len(match) != 5 {
-			return []gitDiffBlock{}, fmt.Errorf("parsed header line has an incorrect number of matched groups: %s", lineContent)
-		}
-
-		oldStartBlock, err := strconv.Atoi(match[1])
-		if err != nil {
-			return []gitDiffBlock{}, fmt.Errorf("could not extract old start block: %w", err)
-		}
-
-		newStartBlock, err := strconv.Atoi(match[3])
-		if err != nil {
-			return []gitDiffBlock{}, fmt.Errorf("could not extract new start block: %w", err)
-		}
-
-		blockExtends, err := strconv.Atoi(match[4])
-		if err != nil {
-			blockExtends = 1
-		}
-
-		i++
-		j := 0
-		oldStartBlockLine := oldStartBlock
-		startBlockLine := -1
-		endBlockLine := -1
-		blockBody := []string{}
-		blocks := []gitDiffBlock{}
-		for j < blockExtends {
-			lineContent := splittedBody[i]
-			if plus_regex.MatchString(lineContent) && startBlockLine == -1 {
-				startBlockLine = j + newStartBlock
-			}
-			if !minus_regex.MatchString(lineContent) && !plus_regex.MatchString(lineContent) && startBlockLine != -1 && endBlockLine == -1 {
-				endBlockLine = j + newStartBlock
-				blocks = append(
-					blocks,
-					gitDiffBlock{
-						OldStartLine: oldStartBlockLine,
-						NewStartLine: startBlockLine,
-						NewEndLine:   endBlockLine,
-						Body:         strings.Join(blockBody, "\n"),
-					},
-				)
-				startBlockLine = -1
-				endBlockLine = -1
-				blockBody = []string{}
-			}
-			if !plus_regex.MatchString(lineContent) {
-				oldStartBlockLine++
-			} else {
-				lineToAdd, _ := strings.CutPrefix(lineContent, "+")
-				blockBody = append(blockBody, lineToAdd)
-			}
-			if !minus_regex.MatchString(lineContent) {
-				j++
-			}
-			i++
-		}
-		if startBlockLine != -1 && endBlockLine == -1 {
-			endBlockLine = newStartBlock + j
-			blocks = append(
-				blocks,
-				gitDiffBlock{
-					OldStartLine: oldStartBlockLine,
-					NewStartLine: startBlockLine,
-					NewEndLine:   endBlockLine,
-					Body:         strings.Join(blockBody, "\n"),
-				},
-			)
-		}
-
-		for _, block := range blocks {
-			result = append(result, block)
-		}
-
-	}
-
-	return result, nil
 }
 
 // Saves a created file in the diff in the atom
