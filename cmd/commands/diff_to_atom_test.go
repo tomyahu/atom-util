@@ -36,6 +36,18 @@ var gitDiffBlocksExample = `@@ -7,0 +8 @@ import (
 +	// hello 2
 `
 
+var gitDiffBlocksExample2 = `@@ -7,0 +8 @@ import (
++// goodbye
+@@ -16,0 +18 @@ func App() *cli.Command {
++	// hello
+@@ -18,0 +21,5 @@ func App() *cli.Command {
++	// hello 2
+ 	
++	// hello 2
+ 	
++	// hello 2
+`
+
 func TestParse(t *testing.T) {
 	values, err := parseGitDiff(gitDiffExample)
 	assert.NoError(t, err)
@@ -59,4 +71,31 @@ func TestBlockParse(t *testing.T) {
 
 	assert.Equal(t, 21, value3.NewStartLine)
 	assert.Equal(t, 23, value3.NewEndLine)
+}
+
+func TestBlockParseSubBlocks(t *testing.T) {
+	values, err := parseGitBlocks(gitDiffBlocksExample2)
+	assert.NoError(t, err)
+	assert.Len(t, values, 5)
+
+	value1 := values[0]
+	value2 := values[1]
+	value3 := values[2]
+	value4 := values[3]
+	value5 := values[4]
+
+	assert.Equal(t, 8, value1.NewStartLine)
+	assert.Equal(t, 9, value1.NewEndLine)
+
+	assert.Equal(t, 18, value2.NewStartLine)
+	assert.Equal(t, 19, value2.NewEndLine)
+
+	assert.Equal(t, 21, value3.NewStartLine)
+	assert.Equal(t, 22, value3.NewEndLine)
+
+	assert.Equal(t, 23, value4.NewStartLine)
+	assert.Equal(t, 24, value4.NewEndLine)
+
+	assert.Equal(t, 25, value5.NewStartLine)
+	assert.Equal(t, 26, value5.NewEndLine)
 }

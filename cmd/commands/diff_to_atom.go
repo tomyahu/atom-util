@@ -216,13 +216,25 @@ func parseGitBlocks(gitDiffFileBody string) ([]gitDiffBlock, error) {
 		startBlockLine := -1
 		endBlockLine := -1
 		blockBody := []string{}
+		blocks := []gitDiffBlock{}
 		for j < blockExtends {
 			lineContent := splittedBody[i]
 			if plus_regex.MatchString(lineContent) && startBlockLine == -1 {
 				startBlockLine = j + newStartBlock
 			}
 			if !minus_regex.MatchString(lineContent) && !plus_regex.MatchString(lineContent) && startBlockLine != -1 && endBlockLine == -1 {
-				endBlockLine = j + newStartBlock - 1
+				endBlockLine = j + newStartBlock
+				blocks = append(
+					blocks,
+					gitDiffBlock{
+						NewStartLine: startBlockLine,
+						NewEndLine:   endBlockLine,
+						Body:         strings.Join(blockBody, "\n"),
+					},
+				)
+				startBlockLine = -1
+				endBlockLine = -1
+				blockBody = []string{}
 			}
 			if plus_regex.MatchString(lineContent) {
 				lineToAdd, _ := strings.CutPrefix(lineContent, "+")
@@ -235,13 +247,19 @@ func parseGitBlocks(gitDiffFileBody string) ([]gitDiffBlock, error) {
 		}
 		if endBlockLine == -1 {
 			endBlockLine = newStartBlock + j
+			blocks = append(
+				blocks,
+				gitDiffBlock{
+					NewStartLine: startBlockLine,
+					NewEndLine:   endBlockLine,
+					Body:         strings.Join(blockBody, "\n"),
+				},
+			)
 		}
 
-		result = append(result, gitDiffBlock{
-			NewStartLine: startBlockLine,
-			NewEndLine:   endBlockLine,
-			Body:         strings.Join(blockBody, "\n"),
-		})
+		for _, block := range blocks {
+			result = append(result, block)
+		}
 
 	}
 
