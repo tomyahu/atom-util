@@ -85,6 +85,10 @@ func TestBlockParse(t *testing.T) {
 	assert.Equal(t, 7, value1.OldStartLine)
 	assert.Equal(t, 16, value2.OldStartLine)
 	assert.Equal(t, 18, value3.OldStartLine)
+
+	assert.Equal(t, "// goodbye", value1.Body)
+	assert.Equal(t, "\t// hello", value2.Body)
+	assert.Equal(t, "\t// hello 2\n\t// hello 2", value3.Body)
 }
 
 func TestBlockParseSubBlocks(t *testing.T) {
