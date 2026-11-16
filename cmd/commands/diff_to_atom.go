@@ -27,6 +27,7 @@ type insertBlockData struct {
 }
 
 type gitDiffBlock struct {
+	OldStartLine int
 	NewStartLine int
 	NewEndLine   int
 	Body         string
@@ -40,7 +41,6 @@ type gitDiffFileData struct {
 
 type insertBlockScriptData struct {
 	BlockStartLine int
-	BlockEndLine   int
 	BlockContent   string
 	Filename       string
 	TargetFileName string
@@ -126,11 +126,11 @@ var DiffToAtomCommand = &cli.Command{
 				continue
 			} else {
 
+				lineOffset := 0
 				for b_index, block := range diffFile.Blocks {
 					file_name := fmt.Sprintf("%s/tmp_folder/%d_%d_%s", atom_path, file_index, b_index, filepath.Base(diffFile.TargetFile))
-					err = saveModifiedBlockInAtom(insertBlockScriptData{
-						BlockStartLine: block.NewStartLine + b_index,
-						BlockEndLine:   block.NewEndLine + b_index,
+					addedOffset, err := saveModifiedBlockInAtom(insertBlockScriptData{
+						BlockStartLine: block.OldStartLine + lineOffset - 1,
 						BlockContent:   block.Body,
 						Filename:       file_name,
 						TargetFileName: diffFile.TargetFile,
@@ -141,6 +141,9 @@ var DiffToAtomCommand = &cli.Command{
 					)
 					if err != nil {
 						return err
+					}
+					if addedOffset {
+						lineOffset++
 					}
 				}
 			}
@@ -201,6 +204,11 @@ func parseGitBlocks(gitDiffFileBody string) ([]gitDiffBlock, error) {
 			return []gitDiffBlock{}, fmt.Errorf("parsed header line has an incorrect number of matched groups: %s", lineContent)
 		}
 
+		oldStartBlock, err := strconv.Atoi(match[1])
+		if err != nil {
+			return []gitDiffBlock{}, fmt.Errorf("could not extract old start block: %w", err)
+		}
+
 		newStartBlock, err := strconv.Atoi(match[3])
 		if err != nil {
 			return []gitDiffBlock{}, fmt.Errorf("could not extract new start block: %w", err)
@@ -213,6 +221,7 @@ func parseGitBlocks(gitDiffFileBody string) ([]gitDiffBlock, error) {
 
 		i++
 		j := 0
+		oldStartBlockLine := oldStartBlock
 		startBlockLine := -1
 		endBlockLine := -1
 		blockBody := []string{}
@@ -227,6 +236,7 @@ func parseGitBlocks(gitDiffFileBody string) ([]gitDiffBlock, error) {
 				blocks = append(
 					blocks,
 					gitDiffBlock{
+						OldStartLine: oldStartBlockLine,
 						NewStartLine: startBlockLine,
 						NewEndLine:   endBlockLine,
 						Body:         strings.Join(blockBody, "\n"),
@@ -236,7 +246,9 @@ func parseGitBlocks(gitDiffFileBody string) ([]gitDiffBlock, error) {
 				endBlockLine = -1
 				blockBody = []string{}
 			}
-			if plus_regex.MatchString(lineContent) {
+			if !plus_regex.MatchString(lineContent) {
+				oldStartBlockLine++
+			} else {
 				lineToAdd, _ := strings.CutPrefix(lineContent, "+")
 				blockBody = append(blockBody, lineToAdd)
 			}
@@ -245,11 +257,12 @@ func parseGitBlocks(gitDiffFileBody string) ([]gitDiffBlock, error) {
 			}
 			i++
 		}
-		if endBlockLine == -1 {
+		if startBlockLine != -1 && endBlockLine == -1 {
 			endBlockLine = newStartBlock + j
 			blocks = append(
 				blocks,
 				gitDiffBlock{
+					OldStartLine: oldStartBlockLine,
 					NewStartLine: startBlockLine,
 					NewEndLine:   endBlockLine,
 					Body:         strings.Join(blockBody, "\n"),
@@ -295,40 +308,42 @@ func saveNewFileInAtom(body string, file_name string) error {
 }
 
 // Saves a modified block in an atom and creates a template
-func saveModifiedBlockInAtom(data insertBlockScriptData, tmp_folder_script_file *os.File, match_only_comments bool, add_uuid_comments bool) error {
+func saveModifiedBlockInAtom(data insertBlockScriptData, tmp_folder_script_file *os.File, match_only_comments bool, add_uuid_comments bool) (bool, error) {
 	err := os.MkdirAll(filepath.Dir(data.Filename), 0755)
 	if err != nil {
-		return fmt.Errorf("could not create output file directory for '%s': %w", data.Filename, err)
+		return false, fmt.Errorf("could not create output file directory for '%s': %w", data.Filename, err)
 	}
 
 	targetFileContent, err := os.ReadFile(data.TargetFileName)
 	if err != nil {
-		return fmt.Errorf("could not read target file '%s': %w", data.TargetFileName, err)
+		return false, fmt.Errorf("could not read target file '%s': %w", data.TargetFileName, err)
 	}
 
-	pattern, err := getLineContent(string(targetFileContent), data.BlockEndLine)
+	pattern, err := getLineContent(string(targetFileContent), data.BlockStartLine+1)
 	if err != nil {
 		pattern = ""
 	}
 
 	pattern = strings.Trim(pattern, "\n \t")
+	addedComment := false
 	if pattern == "" || (match_only_comments && !strings.HasPrefix(pattern, getCommentByExtension(filepath.Ext(data.TargetFileName)))) {
 		pattern = "_____"
 		if add_uuid_comments {
 			pattern = getCommentByExtension(filepath.Ext(data.TargetFileName)) + " ! " + uuid.NewString()
-			insertTextAtFileLine(pattern, data.TargetFileName, data.BlockEndLine, true)
+			insertTextAtFileLine(pattern, data.TargetFileName, data.BlockStartLine+1, true)
+			addedComment = true
 		}
 	}
 
 	file, err := os.OpenFile(data.Filename, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		return fmt.Errorf("could not create output block file '%s': %w", data.Filename, err)
+		return addedComment, fmt.Errorf("could not create output block file '%s': %w", data.Filename, err)
 	}
 	defer file.Close() //nolint:errcheck
 
 	_, err = file.WriteString(data.BlockContent)
 	if err != nil {
-		return fmt.Errorf("could not write to output file '%s': %w", data.Filename, err)
+		return addedComment, fmt.Errorf("could not write to output file '%s': %w", data.Filename, err)
 	}
 
 	err = getInsertBlockTemplate().Execute(tmp_folder_script_file, insertBlockData{
@@ -337,10 +352,10 @@ func saveModifiedBlockInAtom(data insertBlockScriptData, tmp_folder_script_file 
 		TargetFile:    data.TargetFileName,
 	})
 	if err != nil {
-		return fmt.Errorf("could not insert block in script file: %w", err)
+		return addedComment, fmt.Errorf("could not insert block in script file: %w", err)
 	}
 
-	return nil
+	return addedComment, nil
 }
 
 func getInsertBlockTemplate() *template.Template {

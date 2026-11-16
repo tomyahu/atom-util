@@ -48,6 +48,19 @@ var gitDiffBlocksExample2 = `@@ -7,0 +8 @@ import (
 +	// hello 2
 `
 
+var gitDiffBlocksExample3 = `@@ -11,9 +11,11 @@ func App() *cli.Command {
+ 			commands.FindCommand,
+ 			commands.InsertCommand,
+ 			commands.DiffToAtomCommand,
++			commands.MyCommandCommand,
+ 			// ! Register commands
+ 		},
+ 	}
++	// Adding a comment here
+ 
+ 	return commands
+ }`
+
 func TestParse(t *testing.T) {
 	values, err := parseGitDiff(gitDiffExample)
 	assert.NoError(t, err)
@@ -65,12 +78,15 @@ func TestBlockParse(t *testing.T) {
 
 	assert.Equal(t, 8, value1.NewStartLine)
 	assert.Equal(t, 9, value1.NewEndLine)
+	assert.Equal(t, 7, value1.OldStartLine)
 
 	assert.Equal(t, 18, value2.NewStartLine)
 	assert.Equal(t, 19, value2.NewEndLine)
+	assert.Equal(t, 16, value2.OldStartLine)
 
 	assert.Equal(t, 21, value3.NewStartLine)
 	assert.Equal(t, 23, value3.NewEndLine)
+	assert.Equal(t, 18, value3.OldStartLine)
 }
 
 func TestBlockParseSubBlocks(t *testing.T) {
@@ -86,16 +102,33 @@ func TestBlockParseSubBlocks(t *testing.T) {
 
 	assert.Equal(t, 8, value1.NewStartLine)
 	assert.Equal(t, 9, value1.NewEndLine)
+	assert.Equal(t, 7, value1.OldStartLine)
 
 	assert.Equal(t, 18, value2.NewStartLine)
 	assert.Equal(t, 19, value2.NewEndLine)
+	assert.Equal(t, 16, value2.OldStartLine)
 
 	assert.Equal(t, 21, value3.NewStartLine)
 	assert.Equal(t, 22, value3.NewEndLine)
+	assert.Equal(t, 18, value3.OldStartLine)
 
 	assert.Equal(t, 23, value4.NewStartLine)
 	assert.Equal(t, 24, value4.NewEndLine)
+	assert.Equal(t, 19, value4.OldStartLine)
 
 	assert.Equal(t, 25, value5.NewStartLine)
 	assert.Equal(t, 26, value5.NewEndLine)
+	assert.Equal(t, 20, value5.OldStartLine)
+}
+
+func TestBlockParseBigBlock(t *testing.T) {
+	values, err := parseGitBlocks(gitDiffBlocksExample3)
+	assert.NoError(t, err)
+	assert.Len(t, values, 2)
+
+	value1 := values[0]
+	value2 := values[1]
+
+	assert.Equal(t, 14, value1.OldStartLine)
+	assert.Equal(t, 17, value2.OldStartLine)
 }
