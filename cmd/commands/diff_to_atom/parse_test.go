@@ -27,6 +27,25 @@ index 2975a7a..466e01a 100644
 +			// hello 2
 `
 
+var gitDiffExample2 = `32133fb feat created migration file
+diff --git a/migrations/001_my_table.yaml b/migrations/001_my_table.yaml
+new file mode 100644
+index 0000000..f884b19
+--- /dev/null
++++ b/migrations/001_my_table.yaml
+@@ -0,0 +1,9 @@
++model:
++  name: my_awesome_model
++  fields:
++    - name: myfield1
++      type: int
++    - name: myfield2
++      type: String
++    - name: myfield3
++      type: String
+\ No newline at end of file
+`
+
 var gitDiffBlocksExample = `@@ -7,0 +8 @@ import (
 +// goodbye
 @@ -16,0 +18 @@ func App() *cli.Command {
@@ -61,10 +80,29 @@ var gitDiffBlocksExample3 = `@@ -11,9 +11,11 @@ func App() *cli.Command {
  	return commands
  }`
 
+var gitDiffBlocksExample4 = `@@ -0,0 +1,9 @@
++model:
++  name: my_awesome_model
++  fields:
++    - name: myfield1
++      type: int
++    - name: myfield2
++      type: String
++    - name: myfield3
++      type: String
+\ No newline at end of file
+`
+
 func TestParse(t *testing.T) {
 	diff, err := ParseDiffFile(gitDiffExample)
 	assert.NoError(t, err)
 	assert.Len(t, diff.ModifiedFiles, 2)
+}
+
+func TestParseCase2(t *testing.T) {
+	diff, err := ParseDiffFile(gitDiffExample2)
+	assert.NoError(t, err)
+	assert.Len(t, diff.ModifiedFiles, 1)
 }
 
 func TestRawFileDiffBlocks(t *testing.T) {
@@ -119,4 +157,23 @@ func TestBlockParseBigBlock(t *testing.T) {
 
 	assert.Equal(t, 14, value1.OldStartLine)
 	assert.Equal(t, 17, value2.OldStartLine)
+}
+
+func TestBlockParseBlockWithHyphens(t *testing.T) {
+	values, err := parseFileDiffBlocks(gitDiffBlocksExample4)
+	assert.NoError(t, err)
+	assert.Len(t, values, 1)
+
+	value := values[0]
+
+	expected := `model:
+  name: my_awesome_model
+  fields:
+    - name: myfield1
+      type: int
+    - name: myfield2
+      type: String
+    - name: myfield3
+      type: String`
+	assert.Equal(t, expected, value.Body)
 }

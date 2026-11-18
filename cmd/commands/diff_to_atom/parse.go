@@ -13,7 +13,7 @@ var plusRegex = regexp.MustCompile(`^\+`)
 
 // Parses a git diff
 func ParseDiffFile(diffContent string) (*GitDiff, error) {
-	diffContent = strings.ReplaceAll(diffContent, "\\ No newline at end of file\n", " ")
+	diffContent = strings.ReplaceAll(diffContent, "\\ No newline at end of file\n", "")
 	diffFiles := []GitDiffFileData{}
 	for _, fileMatch := range fileRegex.FindAllStringSubmatch(diffContent+"diff", -1) {
 		groups_expected := 4

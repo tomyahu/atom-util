@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"text/template"
 
@@ -140,13 +139,6 @@ var DiffToAtomCommand = &cli.Command{
 
 // Saves a created file in the diff in the atom
 func saveNewFileInAtom(body string, file_name string) error {
-	body = strings.ReplaceAll(body, "\n+", "\n")
-	plus_regex := regexp.MustCompile(`^\+`)
-	minus_regex := regexp.MustCompile(`-.*\n`)
-
-	body = plus_regex.ReplaceAllLiteralString(body, "")
-	body = minus_regex.ReplaceAllLiteralString(body, "")
-
 	err := os.MkdirAll(filepath.Dir(file_name), 0755)
 	if err != nil {
 		return fmt.Errorf("could not create output file directory for '%s': %w", file_name, err)
